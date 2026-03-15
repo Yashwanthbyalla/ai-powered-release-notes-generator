@@ -1,0 +1,239 @@
+<div class="container">
+  <header>
+    <h1>🚀 Release Notes Generator</h1>
+    <div class="status">
+      <span [class.connected]="ollamaConnected" [class.disconnected]="!ollamaConnected">
+        {{ ollamaConnected ? '✓ Ollama Connected' : '✗ Ollama Disconnected' }}
+      </span>
+    </div>
+  </header>
+
+  <div class="form-section">
+    <div class="form-group">
+      <label>Repository Path</label>
+      <input type="text" [(ngModel)]="options.repoPath" placeholder="C:\path\to\repo" [disabled]="!!options.adoUrl" />
+    </div>
+
+    <div class="form-group">
+      <label>ADO URL</label>
+      <input type="text" [(ngModel)]="options.adoUrl" placeholder="Enter ADO Repository URL" [disabled]="!!options.repoPath" />
+    </div>
+
+    <div class="form-group">
+      <label>Generation Method</label>
+      <select [(ngModel)]="options.source" (change)="onSourceChange()">
+        <option value="all-commits">All Commits</option>
+        <option value="date-range">Date Range</option>
+        <option value="tag-range">Tag Range</option>
+        <option value="branch-compare">Branch Compare</option>
+        <option value="last-n-commits">Last N Commits</option>
+        <option value="pipeline-range">Pipeline Range (ADO)</option>
+      </select>
+    </div>
+
+    <!-- Date Range Options -->
+    <div *ngIf="options.source === 'date-range'" class="form-row">
+      <div class="form-group">
+        <label>Start Date</label>
+        <input type="date" [(ngModel)]="options.startDate" />
+      </div>
+      <div class="form-group">
+        <label>End Date</label>
+        <input type="date" [(ngModel)]="options.endDate" />
+      </div>
+    </div>
+
+    <!-- Tag Range Options -->
+    <div *ngIf="options.source === 'tag-range'" class="form-row">
+      <div class="form-group">
+        <label>Start Tag</label>
+        <select [(ngModel)]="options.startTag">
+          <option *ngFor="let tag of tags" [value]="tag">{{ tag }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>End Tag</label>
+        <select [(ngModel)]="options.endTag">
+          <option *ngFor="let tag of tags" [value]="tag">{{ tag }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Branch Compare Options -->
+    <div *ngIf="options.source === 'branch-compare'" class="form-row">
+      <div class="form-group">
+        <label>Base Branch</label>
+        <select [(ngModel)]="options.baseBranch">
+          <option *ngFor="let branch of branches" [value]="branch">{{ branch }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Compare Branch</label>
+        <select [(ngModel)]="options.compareBranch">
+          <option *ngFor="let branch of branches" [value]="branch">{{ branch }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Last N Commits Options -->
+    <div *ngIf="options.source === 'last-n-commits'" class="form-group">
+      <label>Number of Commits</label>
+      <input type="number" [(ngModel)]="options.commitCount" placeholder="10" />
+    </div>
+
+    <!-- Pipeline Range Options -->
+    <div *ngIf="options.source === 'pipeline-range'">
+      <div class="form-group">
+        <label>ADO Organization URL</label>
+        <input type="text" [(ngModel)]="adoOrgUrl" placeholder="https://dev.azure.com/yourorg" />
+      </div>
+      <div class="form-group">
+        <label>ADO Personal Access Token</label>
+        <input type="password" [(ngModel)]="adoToken" />
+      </div>
+      <div class="form-group">
+        <label>Project Name</label>
+        <input type="text" [(ngModel)]="options.adoProject" (blur)="loadPipelines()" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Pipeline</label>
+          <select [(ngModel)]="options.startPipelineId">
+            <option *ngFor="let pipeline of pipelines" [value]="pipeline.id">
+              {{ pipeline.buildNumber }} - {{ pipeline.name }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>End Pipeline</label>
+          <select [(ngModel)]="options.endPipelineId">
+            <option *ngFor="let pipeline of pipelines" [value]="pipeline.id">
+              {{ pipeline.buildNumber }} - {{ pipeline.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Features -->
+    <div class="ai-section">
+      <div class="form-group checkbox">
+        <label>
+          <input type="checkbox" [(ngModel)]="options.aiFeatures!.categorize" />
+          Auto-categorize commits
+        </label>
+      </div>
+      <div class="form-group checkbox">
+        <label>
+          <input type="checkbox" [(ngModel)]="options.aiFeatures!.detectBreaking" />
+          Detect breaking changes
+        </label>
+      </div>
+
+      <div class="form-group checkbox">
+        <label>
+          <input type="checkbox" [(ngModel)]="options.enableAI" [disabled]="!ollamaConnected" />
+          Enable AI Summary
+          <span *ngIf="!ollamaConnected" class="hint">(Requires Ollama)</span>
+        </label>
+      </div>
+
+      <div *ngIf="options.enableAI" class="ai-options">
+        <label>
+          <input type="checkbox" [(ngModel)]="options.aiFeatures!.summarize" />
+          Generate summary
+        </label>
+      </div>
+    </div>
+
+    <button class="btn-primary" (click)="generate()" [disabled]="loading || (!options.repoPath && !options.adoUrl)">
+      {{ loading ? 'Generating...' : 'Generate Release Notes' }}
+    </button>
+
+    <div *ngIf="error" class="error">{{ error }}</div>
+  </div>
+
+  <!-- Results Section -->
+  <div *ngIf="releaseNotes" class="results-section">
+    <div class="results-header">
+      <h2>{{ releaseNotes.title }}</h2>
+      <button class="btn-secondary" (click)="downloadMarkdown()">Download Markdown</button>
+    </div>
+
+    <p class="date-range">{{ releaseNotes.dateRange }}</p>
+
+    <div *ngIf="releaseNotes.summary" class="summary">
+      <h3>📋 Summary</h3>
+      <div class="summary-content" [innerHTML]="formatSummary(releaseNotes.summary)"></div>
+    </div>
+
+
+    <div *ngIf="releaseNotes.categorized; else allCommits">
+      <div *ngIf="releaseNotes.categorized.breaking.length > 0" class="category breaking">
+        <h3>🚨 Breaking Changes ({{ releaseNotes.categorized.breaking.length }})</h3>
+        <ul>
+          <li *ngFor="let commit of releaseNotes.categorized.breaking">
+            <code>{{ commit.hash }}</code> - {{ commit.message }}
+            <span class="author">by {{ commit.author }}</span>
+            <div *ngIf="commit.body" class="description">{{ commit.body }}</div>
+          </li>
+        </ul>
+      </div>
+
+      <div *ngIf="releaseNotes.categorized.features.length > 0" class="category features">
+        <h3>✨ Features ({{ releaseNotes.categorized.features.length }})</h3>
+        <ul>
+          <li *ngFor="let commit of releaseNotes.categorized.features">
+            <code>{{ commit.hash }}</code> - {{ commit.message }}
+            <span class="author">by {{ commit.author }}</span>
+            <div *ngIf="commit.body" class="description">{{ commit.body }}</div>
+          </li>
+        </ul>
+      </div>
+
+      <div *ngIf="releaseNotes.categorized.fixes.length > 0" class="category fixes">
+        <h3>🐛 Bug Fixes ({{ releaseNotes.categorized.fixes.length }})</h3>
+        <ul>
+          <li *ngFor="let commit of releaseNotes.categorized.fixes">
+            <code>{{ commit.hash }}</code> - {{ commit.message }}
+            <span class="author">by {{ commit.author }}</span>
+            <div *ngIf="commit.body" class="description">{{ commit.body }}</div>
+          </li>
+        </ul>
+      </div>
+
+      <div *ngIf="releaseNotes.categorized.other.length > 0" class="category other">
+        <h3>🔧 Other Changes ({{ releaseNotes.categorized.other.length }})</h3>
+        <ul>
+          <li *ngFor="let commit of releaseNotes.categorized.other">
+            <code>{{ commit.hash }}</code> - {{ commit.message }}
+            <span class="author">by {{ commit.author }}</span>
+            <div *ngIf="commit.body" class="description">{{ commit.body }}</div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <ng-template #allCommits>
+      <div class="category">
+        <h3>🔄 All Commits ({{ releaseNotes.commits.length }})</h3>
+        <ul>
+          <li *ngFor="let commit of releaseNotes.commits">
+            <code>{{ commit.hash }}</code> - {{ commit.message }}
+            <span class="author">by {{ commit.author }} on {{ commit.date | date:'short' }}</span>
+            <div *ngIf="commit.body" class="description">{{ commit.body }}</div>
+          </li>
+        </ul>
+      </div>
+    </ng-template>
+
+    <div class="contributors">
+      <h3>👥 Contributors ({{ releaseNotes.contributors.length }})</h3>
+      <ul>
+        <li *ngFor="let contributor of releaseNotes.contributors">
+          {{ contributor.name }} <span class="count">({{ contributor.count }} commits)</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
