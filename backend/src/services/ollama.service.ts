@@ -34,11 +34,6 @@ export class OllamaService {
   }
 
   async generateSummary(commits: Commit[]): Promise<string> {
-    const isConnected = await this.checkConnection();
-    if (!isConnected) {
-      return this.generateSimpleSummary(commits);
-    }
-
     const commitDetails = commits.slice(0, 50).map(c => {
       let detail = `- ${c.message}`;
       if (c.body && c.body.trim()) {
@@ -47,30 +42,47 @@ export class OllamaService {
       return detail;
     }).join('\n');
 
-    const prompt = `Analyze these git commits with their titles and descriptions, then generate a comprehensive release summary (6-8 lines). 
-
-Provide:
-1. Overview of major changes and their impact
-2. Key features added with brief explanations
-3. Important bug fixes and improvements
-4. Any notable technical changes
+    const prompt = `You are a senior technical writer creating detailed release notes. Analyze these git commits thoroughly with their titles and descriptions.
 
 Commits:
 ${commitDetails}
 
-Generate a detailed, professional summary that gives readers a clear understanding of what changed in this release.`;
+Generate a detailed release summary in EXACTLY this format:
 
-    try {
-      const response = await axios.post(`${this.baseUrl}/api/generate`, {
-        model: this.model,
-        prompt,
-        stream: false
-      }, { timeout: 30000 });
+**Release Overview:**
+[4-5 sentences describing the overall scope, goals, and impact of this release. Mention the number of changes, areas affected, and the overall direction of improvements.]
 
-      return response.data.response;
-    } catch (error) {
-      return this.generateSimpleSummary(commits);
-    }
+**Key Highlights:**
+• [Feature/improvement 1 - explain what it does, why it matters, and how it benefits users in 2-3 sentences]
+• [Feature/improvement 2 - explain what it does, why it matters, and how it benefits users in 2-3 sentences]
+• [Feature/improvement 3 - explain what it does, why it matters, and how it benefits users in 2-3 sentences]
+• [Feature/improvement 4 - explain what it does, why it matters, and how it benefits users in 2-3 sentences]
+• [Feature/improvement 5 - explain what it does, why it matters, and how it benefits users in 2-3 sentences]
+
+**Bug Fixes & Improvements:**
+• [Bug fix 1 - describe the problem that was fixed and its impact]
+• [Bug fix 2 - describe the problem that was fixed and its impact]
+• [Bug fix 3 - describe the problem that was fixed and its impact]
+• [Performance or stability improvement - describe what was improved and the expected outcome]
+• [Technical debt or refactoring - describe what was cleaned up or optimized]
+
+**Technical Changes:**
+• [Technical change 1 - describe architectural or code-level changes relevant to developers]
+• [Technical change 2 - describe dependency updates, configuration changes, or tooling improvements]
+• [Technical change 3 - describe any API changes, schema updates, or integration changes]
+
+**Impact:**
+[3-4 sentences about who benefits from this release, what problems it solves, and what users can expect after upgrading. Mention any areas that saw the most improvement.]
+
+IMPORTANT: Follow this exact structure strictly. Use bold headings (**text**) and bullet points (•). Be specific and detailed using information from commit titles and descriptions. Do not skip any section. Each bullet point must be 2-3 sentences with meaningful context.`;
+
+    const response = await axios.post(`${this.baseUrl}/api/generate`, {
+      model: this.model,
+      prompt,
+      stream: false
+    });
+
+    return response.data.response;
   }
 
   private generateSimpleSummary(commits: Commit[]): string {
@@ -111,11 +123,6 @@ Generate a detailed, professional summary that gives readers a clear understandi
   }
 
   async generateReleaseNotes(commitsData: string): Promise<string> {
-    const isConnected = await this.checkConnection();
-    if (!isConnected) {
-      return 'AI service not available. Please ensure Ollama is running.';
-    }
-
     const prompt = `Based on the following commit data with titles and descriptions, generate professional release notes in markdown format.
 
 Analyze both commit titles and their detailed descriptions to:
@@ -129,22 +136,18 @@ ${commitsData}
 
 Generate detailed, well-structured release notes with sections for major features, improvements, and fixes. Use the commit descriptions to provide meaningful context.`;
 
-    try {
-      const response = await axios.post(`${this.baseUrl}/api/generate`, {
-        model: this.model,
-        prompt,
-        stream: false
-      }, { timeout: 60000 });
+    const response = await axios.post(`${this.baseUrl}/api/generate`, {
+      model: this.model,
+      prompt,
+      stream: false
+    });
 
-      return response.data.response;
-    } catch (error) {
-      throw new Error('Failed to generate AI release notes');
-    }
+    return response.data.response;
   }
 
   async checkConnection(): Promise<boolean> {
     try {
-      await axios.get(`${this.baseUrl}/api/tags`, { timeout: 3000 });
+      await axios.get(`${this.baseUrl}/api/tags`);
       return true;
     } catch {
       return false;
