@@ -56,19 +56,21 @@ export class ReleaseNotesService {
       contributors
     };
 
-    const ollamaService = new OllamaService();
-
-    // Categorization & breaking change detection (keyword-based, no AI needed)
-    if (options.aiFeatures?.categorize || options.enableAI) {
-      releaseNotes.categorized = await ollamaService.categorizeCommits(commits);
-    }
-    if (options.aiFeatures?.detectBreaking && releaseNotes.categorized) {
-      releaseNotes.categorized.breaking = await ollamaService.detectBreakingChanges(commits);
-    }
-
-    // AI summary (requires Ollama)
-    if (options.enableAI && options.aiFeatures?.summarize) {
-      releaseNotes.summary = await ollamaService.generateSummary(commits);
+    // AI enhancements
+    if (options.enableAI) {
+      const ollamaService = new OllamaService();
+      
+      if (options.aiFeatures?.categorize) {
+        releaseNotes.categorized = await ollamaService.categorizeCommits(commits);
+      }
+      
+      if (options.aiFeatures?.summarize) {
+        releaseNotes.summary = await ollamaService.generateSummary(commits);
+      }
+      
+      if (options.aiFeatures?.detectBreaking && releaseNotes.categorized) {
+        releaseNotes.categorized.breaking = await ollamaService.detectBreakingChanges(commits);
+      }
     }
 
     // Clean up temp directory if created

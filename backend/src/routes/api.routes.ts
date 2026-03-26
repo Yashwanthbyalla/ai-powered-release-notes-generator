@@ -18,6 +18,17 @@ router.post('/generate', async (req: Request, res: Response) => {
   }
 });
 
+router.post('/generate-ai-release-notes', async (req: Request, res: Response) => {
+  try {
+    const { commitsData } = req.body;
+    const ollamaService = new OllamaService();
+    const releaseNotes = await ollamaService.generateReleaseNotes(commitsData);
+    res.json({ releaseNotes });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get('/git/tags', async (req: Request, res: Response) => {
   try {
     const { repoPath } = req.query;

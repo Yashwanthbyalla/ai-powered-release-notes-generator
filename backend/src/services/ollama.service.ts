@@ -92,6 +92,27 @@ export class OllamaService {
            lowerMessage.includes('major:');
   }
 
+  async generateReleaseNotes(commitsData: string): Promise<string> {
+    const isConnected = await this.checkConnection();
+    if (!isConnected) {
+      return 'AI service not available. Please ensure Ollama is running.';
+    }
+
+    const prompt = `Based on the following commit data, generate professional release notes in markdown format. Focus on user-facing changes and improvements:\n\n${commitsData}\n\nGenerate concise, well-structured release notes with sections for major features, improvements, and fixes.`;
+
+    try {
+      const response = await axios.post(`${this.baseUrl}/api/generate`, {
+        model: this.model,
+        prompt,
+        stream: false
+      }, { timeout: 60000 });
+
+      return response.data.response;
+    } catch (error) {
+      throw new Error('Failed to generate AI release notes');
+    }
+  }
+
   async checkConnection(): Promise<boolean> {
     try {
       await axios.get(`${this.baseUrl}/api/tags`, { timeout: 3000 });

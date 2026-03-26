@@ -2,7 +2,6 @@ export interface ReleaseNotesOptions {
   source: 'all-commits' | 'date-range' | 'tag-range' | 'branch-compare' | 'pipeline-range' | 'last-n-commits';
   repoPath: string;
   adoUrl?: string;
-  adoToken?: string;
   startDate?: string;
   endDate?: string;
   startTag?: string;
@@ -48,6 +47,7 @@ export interface ReleaseNotes {
     other: Commit[];
   };
   summary?: string;
+  aiReleaseNotes?: string;
 }
 
 export interface Pipeline {
