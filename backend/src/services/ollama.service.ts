@@ -39,8 +39,26 @@ export class OllamaService {
       return this.generateSimpleSummary(commits);
     }
 
-    const commitMessages = commits.map(c => c.message).slice(0, 50).join('\n');
-    const prompt = `Summarize these git commits into a detailed release summary (4-5 lines). Include key features, fixes, and improvements:\n\n${commitMessages}`;
+    const commitDetails = commits.slice(0, 50).map(c => {
+      let detail = `- ${c.message}`;
+      if (c.body && c.body.trim()) {
+        detail += `\n  Description: ${c.body.trim()}`;
+      }
+      return detail;
+    }).join('\n');
+
+    const prompt = `Analyze these git commits with their titles and descriptions, then generate a comprehensive release summary (6-8 lines). 
+
+Provide:
+1. Overview of major changes and their impact
+2. Key features added with brief explanations
+3. Important bug fixes and improvements
+4. Any notable technical changes
+
+Commits:
+${commitDetails}
+
+Generate a detailed, professional summary that gives readers a clear understanding of what changed in this release.`;
 
     try {
       const response = await axios.post(`${this.baseUrl}/api/generate`, {
@@ -98,7 +116,18 @@ export class OllamaService {
       return 'AI service not available. Please ensure Ollama is running.';
     }
 
-    const prompt = `Based on the following commit data, generate professional release notes in markdown format. Focus on user-facing changes and improvements:\n\n${commitsData}\n\nGenerate concise, well-structured release notes with sections for major features, improvements, and fixes.`;
+    const prompt = `Based on the following commit data with titles and descriptions, generate professional release notes in markdown format.
+
+Analyze both commit titles and their detailed descriptions to:
+1. Identify user-facing changes and their benefits
+2. Highlight major features with context from descriptions
+3. Explain important fixes and their impact
+4. Note any breaking changes or migration requirements
+
+Commit Data:
+${commitsData}
+
+Generate detailed, well-structured release notes with sections for major features, improvements, and fixes. Use the commit descriptions to provide meaningful context.`;
 
     try {
       const response = await axios.post(`${this.baseUrl}/api/generate`, {

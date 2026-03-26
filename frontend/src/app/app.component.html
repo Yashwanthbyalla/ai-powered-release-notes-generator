@@ -169,48 +169,70 @@
 
 
     <div *ngIf="releaseNotes.categorized; else allCommits">
-      <div *ngIf="releaseNotes.categorized.breaking.length > 0" class="category breaking">
-        <h3>🚨 Breaking Changes ({{ releaseNotes.categorized.breaking.length }})</h3>
-        <ul>
-          <li *ngFor="let commit of releaseNotes.categorized.breaking">
-            <code>{{ commit.hash }}</code> - {{ commit.message }}
-            <span class="author">by {{ commit.author }}</span>
-            <div *ngIf="commit.body" class="description">{{ commit.body }}</div>
-          </li>
-        </ul>
-      </div>
+      <div class="accordion-container">
+        <div *ngIf="releaseNotes.categorized.breaking.length > 0" class="accordion-item">
+          <div class="accordion-header" (click)="toggleAccordion('breaking')" [class.active]="openAccordion === 'breaking'">
+            <h3>🚨 Breaking Changes ({{ releaseNotes.categorized.breaking.length }})</h3>
+            <span class="accordion-icon">{{ openAccordion === 'breaking' ? '▼' : '▶' }}</span>
+          </div>
+          <div class="accordion-content" [class.open]="openAccordion === 'breaking'">
+            <ul>
+              <li *ngFor="let commit of releaseNotes.categorized.breaking">
+                <code>{{ commit.hash }}</code> - {{ commit.message }}
+                <span class="author">by {{ commit.author }}</span>
+                <div *ngIf="commit.body" class="description">{{ commit.body }}</div>
+              </li>
+            </ul>
+          </div>
+        </div>
 
-      <div *ngIf="releaseNotes.categorized.features.length > 0" class="category features">
-        <h3>✨ Features ({{ releaseNotes.categorized.features.length }})</h3>
-        <ul>
-          <li *ngFor="let commit of releaseNotes.categorized.features">
-            <code>{{ commit.hash }}</code> - {{ commit.message }}
-            <span class="author">by {{ commit.author }}</span>
-            <div *ngIf="commit.body" class="description">{{ commit.body }}</div>
-          </li>
-        </ul>
-      </div>
+        <div *ngIf="releaseNotes.categorized.features.length > 0" class="accordion-item">
+          <div class="accordion-header" (click)="toggleAccordion('features')" [class.active]="openAccordion === 'features'">
+            <h3>✨ Features ({{ releaseNotes.categorized.features.length }})</h3>
+            <span class="accordion-icon">{{ openAccordion === 'features' ? '▼' : '▶' }}</span>
+          </div>
+          <div class="accordion-content" [class.open]="openAccordion === 'features'">
+            <ul>
+              <li *ngFor="let commit of releaseNotes.categorized.features">
+                <code>{{ commit.hash }}</code> - {{ commit.message }}
+                <span class="author">by {{ commit.author }}</span>
+                <div *ngIf="commit.body" class="description">{{ commit.body }}</div>
+              </li>
+            </ul>
+          </div>
+        </div>
 
-      <div *ngIf="releaseNotes.categorized.fixes.length > 0" class="category fixes">
-        <h3>🐛 Bug Fixes ({{ releaseNotes.categorized.fixes.length }})</h3>
-        <ul>
-          <li *ngFor="let commit of releaseNotes.categorized.fixes">
-            <code>{{ commit.hash }}</code> - {{ commit.message }}
-            <span class="author">by {{ commit.author }}</span>
-            <div *ngIf="commit.body" class="description">{{ commit.body }}</div>
-          </li>
-        </ul>
-      </div>
+        <div *ngIf="releaseNotes.categorized.fixes.length > 0" class="accordion-item">
+          <div class="accordion-header" (click)="toggleAccordion('fixes')" [class.active]="openAccordion === 'fixes'">
+            <h3>🐛 Bug Fixes ({{ releaseNotes.categorized.fixes.length }})</h3>
+            <span class="accordion-icon">{{ openAccordion === 'fixes' ? '▼' : '▶' }}</span>
+          </div>
+          <div class="accordion-content" [class.open]="openAccordion === 'fixes'">
+            <ul>
+              <li *ngFor="let commit of releaseNotes.categorized.fixes">
+                <code>{{ commit.hash }}</code> - {{ commit.message }}
+                <span class="author">by {{ commit.author }}</span>
+                <div *ngIf="commit.body" class="description">{{ commit.body }}</div>
+              </li>
+            </ul>
+          </div>
+        </div>
 
-      <div *ngIf="releaseNotes.categorized.other.length > 0" class="category other">
-        <h3>🔧 Other Changes ({{ releaseNotes.categorized.other.length }})</h3>
-        <ul>
-          <li *ngFor="let commit of releaseNotes.categorized.other">
-            <code>{{ commit.hash }}</code> - {{ commit.message }}
-            <span class="author">by {{ commit.author }}</span>
-            <div *ngIf="commit.body" class="description">{{ commit.body }}</div>
-          </li>
-        </ul>
+        <div *ngIf="releaseNotes.categorized.other.length > 0" class="accordion-item">
+          <div class="accordion-header" (click)="toggleAccordion('other')" [class.active]="openAccordion === 'other'">
+            <h3>🔧 Other Changes ({{ releaseNotes.categorized.other.length }})</h3>
+            <span class="accordion-icon">{{ openAccordion === 'other' ? '▼' : '▶' }}</span>
+          </div>
+          <div class="accordion-content" [class.open]="openAccordion === 'other'">
+            <ul>
+              <li *ngFor="let commit of releaseNotes.categorized.other">
+                <code>{{ commit.hash }}</code> - {{ commit.message }}
+                <span class="author">by {{ commit.author }}</span>
+                <div *ngIf="commit.body" class="description">{{ commit.body }}</div>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
 

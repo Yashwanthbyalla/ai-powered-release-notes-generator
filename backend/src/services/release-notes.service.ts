@@ -64,7 +64,8 @@ export class ReleaseNotesService {
         releaseNotes.categorized = await ollamaService.categorizeCommits(commits);
       }
       
-      if (options.aiFeatures?.summarize) {
+      // Always generate summary when AI is enabled
+      if (options.aiFeatures?.summarize || options.enableAI) {
         releaseNotes.summary = await ollamaService.generateSummary(commits);
       }
       

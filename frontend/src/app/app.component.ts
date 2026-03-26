@@ -32,6 +32,7 @@ export class AppComponent implements OnInit {
   pipelines: Pipeline[] = [];
   adoOrgUrl = '';
   adoToken = '';
+  openAccordion: string | null = null;
 
   constructor(private apiService: ApiService) {}
 
@@ -191,5 +192,9 @@ export class AppComponent implements OnInit {
     });
 
     return md;
+  }
+
+  toggleAccordion(category: string) {
+    this.openAccordion = this.openAccordion === category ? null : category;
   }
 }
